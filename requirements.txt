@@ -16,3 +16,4 @@ transformer_lens
 circuitsvis
 plotly
 pandas
+nbformat

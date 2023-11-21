@@ -1,35 +1,36 @@
-import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 import torch
+from tqdm.auto import tqdm
 
-def plotly_attribs(activ, title, k=50, n_heads=32, n_layers=32): # tensor input
-    deltas = activ.mean(dim=0)[:, 0].cpu().numpy().astype(np.float32) / 2 # n_layers * n_heads
-    gammas = activ.std(dim=0)[:, 0].cpu().numpy().astype(np.float32) / 2 # n_layers * n_heads
+def normalize(x):
+    return (x - np.min(x)) / (np.max(x) - np.min(x))
 
-    labels = [[f'L{j}H{i}' for i in range(n_heads)] + [f'L{j}MLP']  for j in range(n_layers)]
-    colors = [['blue' for i in range(n_heads)] + ['red']  for j in range(n_layers)]
-    labels = [j for i in labels for j in i]
-    colors = [j for i in colors for j in i]
+def standardize(x):
+    return (x - np.mean(x)) / np.std(x)
 
-    idxs = np.argsort(deltas)[::-1]
+def get_activations(prompts, model, comps, batch_size=8):
+    n_layers = len(model.blocks)
+    activations = {comp: {i: [] for i in range(n_layers)} for comp in comps}
 
-    data = pd.DataFrame({
-        'label': [labels[i] for i in idxs[:k]],
-        'mean': deltas[idxs][:k],
-        'std': gammas[idxs][:k],
-        'color': [colors[i] for i in idxs[:k]]
-    })
+    for i in tqdm(range(len(prompts) // batch_size)):
+        toks = model.to_tokens(prompts.iloc[i*batch_size:(i+1)*batch_size].prompt.to_list())
+        _, cache = model.run_with_cache(toks)
 
+        for comp in comps:
+            for j in range(n_layers):
+                activations[comp][j].append(cache.cache_dict[f'blocks.{j}.{comp}'][:, -1, :].cpu())
+        
+        del cache
+    for comp in comps:
+        for j in range(n_layers):
+            activations[comp][j] = torch.cat(activations[comp][j], dim=0)
 
-    fig = go.Figure(data=[go.Bar(
-        x=[labels[i] for i in idxs[:k]],
-        y=deltas[idxs][:k],
-        marker_color=[colors[i] for i in idxs[:k]], # marker color can be a single color value or an iterable
-        error_y=dict(type='data', array=gammas[idxs][:k], visible=True)
-    )])
-    
-    fig.update_layout(title_text=f'Logit attributions - {title}', yaxis=dict(title='Logit contribution', range=[0, 1]))
+    return activations
 
-    # Creating the bar plot
-    fig.show()
+def list_to_str(x):
+    s = ''
+    for i in list(x):
+        s += str(i) + ' '
+
+    return s[:-1]

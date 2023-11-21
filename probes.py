@@ -60,32 +60,59 @@ def get_train_test_with_prompts(activations, prompts, layer):
 def get_top_neurons(activations, prompts, method, k=64, **kwargs):
     top_k_features = []
     n = activations[0].shape[-1]
+    model = None
+    if method == 'mmd':
+        raise NotImplementedError
+
+        for j in tqdm(range(len(activations))):
+            X = activations[j].numpy()
+            y = prompts.labels.to_numpy()
+
+            imps = pd.DataFrame({
+                'layer': [j for i in range(n)],
+                'neuron': np.arange(n),
+                'importance': np.abs()
+            })
+            """
+            mean_dif = np.abs(X[pos_class].mean(axis=0) -
+                              X[~pos_class].mean(axis=0))
+            """
+
+            top_k_features.append(imps.sort_values(by='importance').iloc[-k:])
 
     if method == 'lr':
-        model = LogisticRegression(n_jobs=-1, verbose=False, max_iter=250, **kwargs)
+        model = LogisticRegression(n_jobs=-1, verbose=False, max_iter=250, class_weight='balanced',
+                                   C=0.1, penalty='l1', solver='saga', **kwargs)
+
     elif method == 'svc':
         model = LinearSVC(loss='hinge', verbose=False, **kwargs)
 
-    for j in tqdm(range(len(activations))):
-        # Get train test
-        X_train, _, y_train, _ = get_train_test(activations, prompts, j)
+    if model:
+        for j in tqdm(range(len(activations))):
+            # Get train test
+            X_train, _, y_train, _ = get_train_test(activations, prompts, j)
 
-        model.fit(X_train, y_train)
+            model.fit(X_train, y_train)
 
-        imps = pd.DataFrame({
-            'layer': [j for i in range(n)],
-            'neuron': np.arange(n),
-            'importance': np.abs(model.coef_[0])
-        })
+            imps = pd.DataFrame({
+                'layer': [j for i in range(n)],
+                'neuron': np.arange(n),
+                'importance': np.abs(model.coef_[0])
+            })
 
-        top_k_features.append(imps.sort_values(by='importance').iloc[-k:])
+            top_k_features.append(imps.sort_values(by='importance').iloc[-k:])
 
     return pd.concat(top_k_features)
 
 
 @ignore_warnings(category=ConvergenceWarning)
 def log_reg_score(X_train, y_train, X_test, y_test, **kwargs):
-    lr = LogisticRegression(**kwargs)
+    lr = LogisticRegression(class_weight='balanced',
+                            penalty='l2',
+                            solver='saga',
+                            n_jobs=-1,
+                            max_iter=200,
+                            **kwargs)
     lr.fit(X_train, y_train)
 
     y_pred_prob = lr.predict(X_test)
@@ -93,10 +120,14 @@ def log_reg_score(X_train, y_train, X_test, y_test, **kwargs):
 
     return (precision_score(y_test, y_pred, zero_division=0), recall_score(y_test, y_pred, zero_division=0))
 
-
 @ignore_warnings(category=ConvergenceWarning)
 def log_reg_score_with_prompts(X_train, y_train, X_test, y_test, prompts_test, **kwargs):
-    lr = LogisticRegression(**kwargs)
+    lr = LogisticRegression(class_weight='balanced',
+                            penalty='l2',
+                            solver='saga',
+                            n_jobs=-1,
+                            max_iter=200,
+                            **kwargs)
     lr.fit(X_train, y_train)
 
     y_pred_prob = lr.predict(X_test)
@@ -109,7 +140,7 @@ def log_reg_score_with_prompts(X_train, y_train, X_test, y_test, prompts_test, *
             positively_predicted)
 
 
-def get_single_probing(activations, prompts, method, top_k_features=None, k=64):
+def get_single_probing(activations, prompts, method, top_k_features=None, k=64, print_activations = True):
     scores_df = {
         'L': [],
         'N': [],
@@ -117,12 +148,12 @@ def get_single_probing(activations, prompts, method, top_k_features=None, k=64):
         'R': [],
         'F1': []
     }
-
-    phrases_df = {
-        'L': [],
-        'N': [],
-        'Phrases': [],
-    }
+    if print_activations:
+        phrases_df = {
+            'L': [],
+            'N': [],
+            'Phrases': [],
+        }
 
     if top_k_features is None:
         top_k_features = get_top_neurons(activations, prompts, method=method, k=k)
@@ -130,10 +161,18 @@ def get_single_probing(activations, prompts, method, top_k_features=None, k=64):
     for i in tqdm(range(len(activations) * k)):
         l, n, *_ = top_k_features.iloc[i]
 
-        X_train, X_test, y_train, y_test, prompts_test = get_train_test_with_prompts(activations, prompts, int(l))
+        if print_activations:
+            X_train, X_test, y_train, y_test, prompts_test = get_train_test_with_prompts(activations, prompts, int(l))
+            p, r, predicted = log_reg_score_with_prompts(X_train[:, int(n), None], y_train, X_test[:, int(n), None],
+                                                         y_test,
+                                                         prompts_test)
+            phrases_df['L'].append(l)
+            phrases_df['N'].append(n)
+            phrases_df['Phrases'].append(predicted)
 
-        p, r, predicted = log_reg_score_with_prompts(X_train[:, int(n), None], y_train, X_test[:, int(n), None], y_test,
-                                                     prompts_test)
+        else:
+            X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
+            p, r = log_reg_score(X_train[:, int(n), None], y_train, X_test[:, int(n), None], y_test)
 
         scores_df['L'].append(l)
         scores_df['N'].append(n)
@@ -141,118 +180,43 @@ def get_single_probing(activations, prompts, method, top_k_features=None, k=64):
         scores_df['R'].append(r)
         scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
 
-        phrases_df['L'].append(l)
-        phrases_df['N'].append(n)
-        phrases_df['Phrases'].append(predicted)
-
-    return pd.DataFrame(scores_df), pd.DataFrame(phrases_df)
+    phrases_res = None if not print_activations else pd.DataFrame(phrases_df)
+    return pd.DataFrame(scores_df), phrases_res
 
 
-@ignore_warnings(category=ConvergenceWarning)
-def get_C_value(activations, prompts, start, max_k, method, inc=0.25, k=64):
-    C = start
-    layers = {}
-
-    stop = True
-    print(f'Search for {max_k} started!')
-    while stop:
-
-        # regression for feature selection
-        lr1 = LogisticRegression(
-            class_weight='balanced',
-            penalty='l1', solver='saga', n_jobs=-1, verbose=False, C=np.exp(C))
-
-        # regression for scoring 
-        lr2 = LogisticRegression(verbose=False)
-        # class_weight='balanced', penalty='l2', solver='saga', n_jobs=-1)
-
-        top_k_features = get_top_neurons(activations, prompts, method=method, k=k)
-
-        for l in range(len(activations)):
-
-            sub_df = top_k_features[top_k_features['layer'] == l]
-            neurons = sub_df['neuron'].to_numpy()
-
-            X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
-
-            # fit fs-lr
-            fit1 = lr1.fit(X_train[:, neurons], y_train)
-
-            coefs = fit1.coef_[0]
-
-            if l not in layers:
-                if np.sum(coefs > 0) >= max_k:
-                    idxs = np.argsort(coefs)  # find relevant neurons
-
-                    # fit sc-lr
-                    fit2 = lr2.fit(X_train[:, neurons[idxs[:max_k]]], y_train)
-
-                    y_pred_prob = lr2.predict(X_test[:, neurons[idxs[:max_k]]])
-                    y_pred = np.round(y_pred_prob)
-
-                    p = precision_score(y_test, y_pred, zero_division=0)
-                    r = recall_score(y_test, y_pred, zero_division=0)
-
-                    layers[l] = (neurons[idxs[:max_k]], p, r, 2 * p * r / (p + r))
-
-        C += inc
-        if len(layers) == len(activations):
-            stop = False
-
-    od = OrderedDict(sorted(layers.items()))
-    return list(od.values())
-
-
-def get_multi_probing(activations, prompts, method, k=64):
-    scores_dfs = []
-    optimal_C = {i: get_C_value(activations, prompts, -1, i, inc=0.25, k=k, method=method) for i in range(1, 6)}
-
-    for C in optimal_C:
-        df = {
-            'L': list(range(len(activations))),
-            'nN': [C for i in range(len(activations))],
-            'N': [],
-            'P': [],
-            'R': [],
-            'F1': []
-        }
-        for i in range(len(optimal_C[C])):
-            df['N'].append(list_to_str(optimal_C[C][i][0]))
-            df['P'].append(optimal_C[C][i][1])
-            df['R'].append(optimal_C[C][i][2])
-            df['F1'].append(optimal_C[C][i][3])
-
-        scores_dfs.append(pd.DataFrame(df))
-
-    return pd.concat(scores_dfs)
-
-
-def get_multi_probing(activations, prompts, method, top_k_features=None, k=5):
+def get_multi_probing(activations, prompts, method, top_k_features=None, max_multi_k=5, batch_k=15):
     scores_df = {
         'L': [],
+        'K': [],
         'N': [],
         'P': [],
         'R': [],
         'F1': []
     }
 
+    top_neurons_to_source = batch_k + max_multi_k - 1
+
     if top_k_features is None:
-        top_k_features = get_top_neurons(activations, prompts, method=method, k=k)
+        top_k_features = get_top_neurons(activations, prompts, method=method, k=top_neurons_to_source)
 
+    # creating dict for top_k neurons, dictionary with layer: list of selected neurons
     sel_neurons = {i: [] for i in range(len(activations))}
-    for i in tqdm(range(len(activations) * k)):
+    for i in range(len(activations) * top_neurons_to_source):  # layer * k
         l, n, *_ = top_k_features.iloc[i]
-        sel_neurons[int(l)].append(int(n))
-
-    X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
+        sel_neurons[int(l)].append(int(n))  # creating a list of layer with selected indices
 
     for l in range(len(activations)):
-        p, r = log_reg_score(X_train[:, sel_neurons[l]], y_train, X_test[:, sel_neurons[l]], y_test)
+        X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
+        for k in range(1, max_multi_k + 1):
+            for i in range(batch_k):
+                neurons_to_consider = sel_neurons[int(l)][i:i + k]
+                p, r = log_reg_score(X_train[:, neurons_to_consider], y_train, X_test[:, neurons_to_consider], y_test)
 
-        scores_df['L'].append(int(l))
-        scores_df['N'].append(sel_neurons[int(l)])
-        scores_df['P'].append(p)
-        scores_df['R'].append(r)
-        scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
+                scores_df['L'].append(int(l))
+                scores_df['K'].append(int(k))
+                scores_df['N'].append(neurons_to_consider)
+                scores_df['P'].append(p)
+                scores_df['R'].append(r)
+                scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
 
     return pd.DataFrame(scores_df)

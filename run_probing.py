@@ -6,7 +6,6 @@ import os
 import plotly.offline as po
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
 
 from utils import get_activations
 from plotting import plot_pc, plot_single_probes, plot_multi_probes
@@ -19,13 +18,21 @@ parser.add_argument("-m", "--hf_model", help="Huggingface model to load.", type=
 parser.add_argument("-d", "--device", help="Device to load the model.", type=str, default='cuda')
 parser.add_argument("-nd", "--n_devices", help="Number of devices to load the model.", type=int, default=1)
 parser.add_argument("-bs", "--batch_size", help="Batch size of the prompts.", type=int, default=8)
-parser.add_argument("-hp", "--half_precision", help="Whether to load the model in half precision 0/1.", type=int, default=0)
-parser.add_argument("-bm", "--base_model", help="Huggingface base model onto which weights should be loaded.", type=str, default="")
-parser.add_argument("-adp", "--adapter_model", help="Huggingface adapter model.", type=str, default="")
-parser.add_argument("-ds", "--dataset", help="Dataset to run the probing (must be in the /data folder!).", type=str, default="")
+parser.add_argument("-hp", "--half_precision", help="Whether to load the model in half precision 0/1.", type=int,
+                    default=0)
+parser.add_argument("-bm", "--base_model", help="Huggingface base model onto which weights should be loaded.", type=str,
+                    default="")
+parser.add_argument("-ds", "--dataset", help="Dataset to run the probing (must be in the /data folder!).", type=str,
+                    default="")
 parser.add_argument("-mtd", "--method", help="Method used for probing.", type=str, default="lr")
-parser.add_argument("-k", "--k", help="Number of neurons to be considered for probing.", type=int, default=64)
-
+parser.add_argument("-single_k", "--single_k", help="Number of neurons to be considered for single probing.", type=int,
+                    default=64)
+parser.add_argument("-max_multi_k", "--max_multi_k", help="Max number of neurons to consider for multi probing.",
+                    type=int, default=5)
+parser.add_argument("-batch_k", "--batch_k", help="Number of batch neurons to be considered for multi probing.",
+                    type=int, default=15)
+parser.add_argument("-print_activations", "--print_activations", help="Whether to print activations for single probing.",
+                    type=bool, default=True)
 
 args = parser.parse_args()
 
@@ -42,40 +49,23 @@ else:
     dtype = torch.float32
 
 model = None
+try:
+    model = HookedTransformer.from_pretrained(args.hf_model, device=args.device, n_devices=args.n_devices, dtype=dtype)
+    logger.info('Model loaded correctly.')
+except Exception as e:
+    logger.warning(f'Some problem occurred when loading the model, trying to load it from HF...')
 
-if args.adapter_model != "":
-    hf_model = AutoModelForCausalLM.from_pretrained(
-        args.hf_model,
-        torch_dtype=dtype,
-        low_cpu_mem_usage=True
-    )
-    peft_model = PeftModel.from_pretrained(hf_model, args.adapter_model).merge_and_unload()
-    del hf_model
-    #hf_model.load_adapter(args.adapter_model)
-    #model = model.merge_and_unload()
-    tokenizer = AutoTokenizer.from_pretrained(args.hf_model)
-    model = HookedTransformer.from_pretrained(args.base_model, hf_model=peft_model, tokenizer=tokenizer,
-                                                device=args.device, n_devices=args.n_devices, dtype=dtype)
-    logger.info('Model loaded and adapter set correctly.')
-else:
-    try: 
-        model = HookedTransformer.from_pretrained(args.hf_model, device=args.device, n_devices=args.n_devices, dtype=dtype)
+if not model:
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(args.hf_model)
+        hf_model = AutoModelForCausalLM.from_pretrained(args.hf_model, low_cpu_mem_usage=True)
+        model = HookedTransformer.from_pretrained(args.base_model, hf_model=hf_model, tokenizer=tokenizer,
+                                                  device=args.device, n_devices=args.n_devices, dtype=dtype)
+        del hf_model
         logger.info('Model loaded correctly.')
+
     except Exception as e:
-        logger.warning(f'Some problem occurred when loading the model, trying to load it from HF...')
-
-    if not model:
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(args.hf_model)
-            hf_model = AutoModelForCausalLM.from_pretrained(args.hf_model, low_cpu_mem_usage=True)
-            model = HookedTransformer.from_pretrained(args.base_model, hf_model=hf_model, tokenizer=tokenizer,
-                                                    device=args.device, n_devices=args.n_devices, dtype=dtype)
-            del hf_model
-            logger.info('Model loaded correctly.')
-        except Exception as e:
-            logger.critical(f'Some problem occurred when loading the model!\n{e}')
-
-model.tokenizer.padding = 'left'
+        logger.critical(f'Some problem occurred when loading the model!\n{e}')
 
 if 'Llama' in args.hf_model:
     model.tokenizer.padding = 'left'
@@ -83,7 +73,7 @@ if 'Llama' in args.hf_model:
 # Loading the dataset
 prompts = pd.read_csv(f'data/{args.dataset}', index_col=0)
 n = len(prompts)
-prompts = prompts.iloc[:n//args.batch_size*args.batch_size, :]
+prompts = prompts.iloc[:n // args.batch_size * args.batch_size, :]
 logger.info('Dataset loaded correctly.')
 
 # Caching activations
@@ -93,8 +83,6 @@ try:
     logger.info('Caching activations completed.')
 except Exception as e:
     logger.critical(f'Some problem occurred when caching activations of the model!\n{e}')
-
-del model # Delete the model to free up gpu space
 
 # Compute delta activations
 n_layers = len(mlp_post)
@@ -109,10 +97,7 @@ else:
     cols = 4
 rows = n_layers // cols
 
-if args.adapter_model != "":
-    folder = args.adapter_model.split('/')[-1]
-else:
-    folder = args.hf_model.split('/')[-1]
+folder = args.hf_model.split('/')[-1]
 if not os.path.exists(f"images/{folder}"):
     os.mkdir(f"images/{folder}")
 
@@ -122,22 +107,25 @@ fig.write_image(f"images/{folder}/2d_pca_kde.svg")
 fig.write_html(f"images/{folder}/2d_pca_kde.html")
 logger.info('Plot created and saved.')
 
+print(mlp_post[0].shape, len(prompts))
+
 # Run probing
 
-top_k_features = get_top_neurons(mlp_post, prompts, method=args.method, k=args.k)
+top_k_features = get_top_neurons(mlp_post, prompts, method=args.method, k=max(args.single_k, args.batch_k + args.max_multi_k - 1))
 
 logger.info('Running single probes...')
-single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=top_k_features, k=args.k)
+single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=top_k_features, k=args.single_k, print_activations = args.print_activations)
 logger.info('Single probes obtained.')
 
 logger.info('Running multi probes...')
-multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=top_k_features, k=args.k)
+multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=top_k_features, max_multi_k=args.max_multi_k, batch_k=args.batch_k)
 logger.info('Single multi obtained.')
 
 if not os.path.exists(f"probes/{folder}"):
     os.mkdir(f"probes/{folder}")
 
-single_probes_phrases.to_csv(f'probes/{folder}/single_probes_phrases.csv')
+if single_probes_phrases:
+    single_probes_phrases.to_csv(f'probes/{folder}/single_probes_phrases.csv')
 single_probes.to_csv(f'probes/{folder}/single_probes.csv')
 multi_probes.to_csv(f'probes/{folder}/multi_probes.csv')
 
@@ -148,8 +136,8 @@ fig.write_image(f"images/{folder}/single_probes.svg")
 fig.write_html(f"images/{folder}/single_probes.html")
 logger.info('Plot created and saved.')
 
-logger.info('Creating multi probes plot...')
-#fig = plot_multi_probes(multi_probes, rows, cols)
-#fig.write_image(f"images/{folder}/multi_probes.svg")
-#fig.write_html(f"images/{folder}/multi_probes.html")
-logger.info('Plot created and saved.')
+#logger.info('Creating multi probes plot...')
+# fig = plot_multi_probes(multi_probes, rows, cols)
+# fig.write_image(f"images/{folder}/multi_probes.svg")
+# fig.write_html(f"images/{folder}/multi_probes.html")
+#logger.info('Plot created and saved.')

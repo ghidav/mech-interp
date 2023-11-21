@@ -4,17 +4,12 @@ import os
 from tqdm.auto import tqdm
 
 from sklearn.decomposition import PCA
-from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import precision_score, recall_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
-
-from scipy.stats import gaussian_kde
-from collections import OrderedDict
 
 from utils import list_to_str
 
@@ -210,13 +205,14 @@ def get_multi_probing(activations, prompts, method, top_k_features=None, max_mul
         for k in range(1, max_multi_k + 1):
             for i in range(batch_k):
                 neurons_to_consider = sel_neurons[int(l)][i:i + k]
-                p, r = log_reg_score(X_train[:, neurons_to_consider], y_train, X_test[:, neurons_to_consider], y_test)
+                if len(neurons_to_consider) > 0:
+                    p, r = log_reg_score(X_train[:, neurons_to_consider], y_train, X_test[:, neurons_to_consider], y_test)
 
-                scores_df['L'].append(int(l))
-                scores_df['K'].append(int(k))
-                scores_df['N'].append(neurons_to_consider)
-                scores_df['P'].append(p)
-                scores_df['R'].append(r)
-                scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
+                    scores_df['L'].append(int(l))
+                    scores_df['K'].append(int(k))
+                    scores_df['N'].append(neurons_to_consider)
+                    scores_df['P'].append(p)
+                    scores_df['R'].append(r)
+                    scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
 
     return pd.DataFrame(scores_df)

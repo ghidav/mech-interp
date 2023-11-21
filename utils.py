@@ -3,6 +3,10 @@ import numpy as np
 import torch
 from tqdm.auto import tqdm
 
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+from transformer_lens import HookedTransformer
+
 def normalize(x):
     return (x - np.min(x)) / (np.max(x) - np.min(x))
 
@@ -34,3 +38,38 @@ def list_to_str(x):
         s += str(i) + ' '
 
     return s[:-1]
+
+def load_model(hf_model, base_model="", adapter_model="", device='cpu', n_devices=1, dtype=torch.float32):
+    model = None
+
+    if adapter_model != "":
+        hf_model = AutoModelForCausalLM.from_pretrained(
+            hf_model,
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True
+        )
+        peft_model = PeftModel.from_pretrained(hf_model, adapter_model).merge_and_unload()
+        del hf_model
+
+        tokenizer = AutoTokenizer.from_pretrained(hf_model)
+        model = HookedTransformer.from_pretrained(base_model, hf_model=peft_model, tokenizer=tokenizer,
+                                                    device=device, n_devices=n_devices, dtype=dtype)
+    else:
+        try: 
+            model = HookedTransformer.from_pretrained(hf_model, device=device, n_devices=n_devices, dtype=dtype)
+        except Exception as e:
+            print(e)
+
+        if not model:
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(hf_model)
+                hf_model = AutoModelForCausalLM.from_pretrained(hf_model, low_cpu_mem_usage=True)
+                model = HookedTransformer.from_pretrained(base_model, hf_model=hf_model, tokenizer=tokenizer,
+                                                        device=device, n_devices=n_devices, dtype=dtype)
+                del hf_model
+
+            except Exception as e:
+                print(e)
+    model.tokenizer.padding = 'left' # TO CHECK!
+
+    return model

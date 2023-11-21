@@ -187,7 +187,7 @@ def plot_multi_probes(scores_dfs, rows, cols):
 
     for index, row in scores_dfs.iterrows():
         fig.add_trace(
-            go.Scatter(x=[row['P']], y=[row['R']], marker=dict(color=[mapping[row['nN']]]),
+            go.Scatter(x=[row['P']], y=[row['R']], marker=dict(color=[mapping[row['K']]]),
                 text=[row['text']], showlegend=False, hovertext=[row['text']]), #fill=[row['F1']],
             row=int(row['L'] // cols)+1, col=int(row['L'] % cols)+1
         )

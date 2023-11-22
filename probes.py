@@ -57,7 +57,6 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
     n = activations[0].shape[-1]
     model = None
     if method == 'mmd':
-        raise NotImplementedError
 
         for j in tqdm(range(len(activations))):
             X = activations[j].numpy()
@@ -66,12 +65,9 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
             imps = pd.DataFrame({
                 'layer': [j for i in range(n)],
                 'neuron': np.arange(n),
-                'importance': np.abs()
+                'importance': np.abs(X[y > 0.5].mean(axis=0) -
+                              X[y < 0.5].mean(axis=0))
             })
-            """
-            mean_dif = np.abs(X[pos_class].mean(axis=0) -
-                              X[~pos_class].mean(axis=0))
-            """
 
             top_k_features.append(imps.sort_values(by='importance').iloc[-k:])
 

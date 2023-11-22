@@ -1,0 +1,11 @@
+root - INFO - Loading the model...
+urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): huggingface.co:443
+urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /EleutherAI/pythia-6.9b/resolve/main/config.json HTTP/1.1" 200 0
+urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /EleutherAI/pythia-6.9b/resolve/main/config.json HTTP/1.1" 200 0
+urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /EleutherAI/pythia-6.9b/resolve/main/generation_config.json HTTP/1.1" 404 0
+urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /EleutherAI/pythia-6.9b/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+root - WARNING - With reduced precision, it is advised to use `from_pretrained_no_processing` instead of `from_pretrained`.
+root - INFO - Dataset loaded correctly.
+root - INFO - Caching activations...
+root - CRITICAL - Some problem occurred when caching activations of the model!
+CUDA out of memory. Tried to allocate 32.00 MiB. GPU 1 has a total capacty of 14.58 GiB of which 29.31 MiB is free. Including non-PyTorch memory, this process has 14.54 GiB memory in use. Of the allocated memory 13.65 GiB is allocated by PyTorch, and 204.41 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

@@ -153,7 +153,7 @@ def get_single_probing(activations, prompts, method, top_k_features=None, k=64, 
     if top_k_features is None:
         top_k_features = get_top_neurons(activations, prompts, method=method, k=k)
 
-    for i in tqdm(range(len(activations) * k)):
+    for i in tqdm(range(len(activations) * k), desc="Single probing"):
         l, n, *_ = top_k_features.iloc[i]
 
         if print_activations:
@@ -200,7 +200,7 @@ def get_multi_probing(activations, prompts, method, top_k_features=None, max_mul
         l, n, *_ = top_k_features.iloc[i]
         sel_neurons[int(l)].append(int(n))  # creating a list of layer with selected indices
 
-    for l in range(len(activations)):
+    for l in tqdm(range(len(activations)), desc="Multi probing"):
         X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
         for k in range(1, max_multi_k + 1):
             for i in range(batch_k):

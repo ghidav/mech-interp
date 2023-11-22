@@ -98,7 +98,7 @@ single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, arg
 logger.info('Single probes obtained.')
 
 logger.info('Running multi probes...')
-multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=top_k_features, max_multi_k=args.max_multi_k, batch_k=args.batch_k)
+multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, max_multi_k=args.max_multi_k, batch_k=args.batch_k)
 logger.info('Single multi obtained.')
 
 if not os.path.exists(f"probes/{folder}"):

@@ -21,7 +21,7 @@ parser.add_argument("-bm", "--transformerlens_model", help="Model as called in t
                     default="")
 parser.add_argument("-ds", "--dataset", help="Dataset to run the probing (must be in the /data folder!).", type=str,
                     default="")
-parser.add_argument("-mtd", "--method", help="Method used for probing.", type=str, default="lr")
+parser.add_argument("-mtd", "--method", help="Method used for probing.", type=str, default="lr_l2")
 parser.add_argument("-single_k", "--single_k", help="Number of neurons to be considered for single probing.", type=int,
                     default=64)
 parser.add_argument("-max_multi_k", "--max_multi_k", help="Max number of neurons to consider for multi probing.",

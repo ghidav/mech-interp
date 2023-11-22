@@ -39,19 +39,19 @@ def list_to_str(x):
 
     return s[:-1]
 
-def load_model(hf_model, base_model="", adapter_model="", device='cpu', n_devices=1, dtype=torch.float32):
+def load_model(hf_model_name, base_model="", adapter_model="", device='cpu', n_devices=1, dtype=torch.float32):
     model = None
 
     if adapter_model != "":
         hf_model = AutoModelForCausalLM.from_pretrained(
-            hf_model,
+            hf_model_name,
             torch_dtype=dtype,
             low_cpu_mem_usage=True
         )
         peft_model = PeftModel.from_pretrained(hf_model, adapter_model).merge_and_unload()
         del hf_model
 
-        tokenizer = AutoTokenizer.from_pretrained(hf_model)
+        tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
         model = HookedTransformer.from_pretrained(base_model, hf_model=peft_model, tokenizer=tokenizer,
                                                     device=device, n_devices=n_devices, dtype=dtype)
     else:
@@ -62,8 +62,8 @@ def load_model(hf_model, base_model="", adapter_model="", device='cpu', n_device
 
         if not model:
             try:
-                tokenizer = AutoTokenizer.from_pretrained(hf_model)
-                hf_model = AutoModelForCausalLM.from_pretrained(hf_model, low_cpu_mem_usage=True)
+                tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
+                hf_model = AutoModelForCausalLM.from_pretrained(hf_model_name, low_cpu_mem_usage=True)
                 model = HookedTransformer.from_pretrained(base_model, hf_model=hf_model, tokenizer=tokenizer,
                                                         device=device, n_devices=n_devices, dtype=dtype)
                 del hf_model

@@ -80,7 +80,7 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
                                    C=0.1, penalty='l1', solver='saga', **kwargs)
 
     elif method == 'svc':
-        model = LinearSVC(loss='hinge', verbose=False, **kwargs)
+        model = LinearSVC(loss='hinge', dual='auto', verbose=False, **kwargs)
 
     if model:
         for j in tqdm(range(len(activations))):

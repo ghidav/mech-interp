@@ -6,3 +6,11 @@
 .idea/mech-interp.iml
 
 .idea/
+
+c
+
+.__pycache__/
+
+probes.log
+
+requirements.txt.save

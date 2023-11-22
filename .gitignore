@@ -11,6 +11,8 @@ c
 
 .__pycache__/
 
+.images/
+
 probes.log
 
 requirements.txt.save

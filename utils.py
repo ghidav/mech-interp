@@ -56,7 +56,7 @@ def load_model(hf_model_name, base_model="", adapter_model="", device='cpu', n_d
                                                     device=device, n_devices=n_devices, dtype=dtype)
     else:
         try: 
-            model = HookedTransformer.from_pretrained(hf_model, device=device, n_devices=n_devices, dtype=dtype)
+            model = HookedTransformer.from_pretrained(hf_model_name, device=device, n_devices=n_devices, dtype=dtype)
         except Exception as e:
             print(e)
 

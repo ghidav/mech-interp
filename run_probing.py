@@ -17,11 +17,11 @@ parser.add_argument("-nd", "--n_devices", help="Number of devices to load the mo
 parser.add_argument("-bs", "--batch_size", help="Batch size of the prompts.", type=int, default=8)
 parser.add_argument("-hp", "--half_precision", help="Whether to load the model in half precision 0/1.", type=int,
                     default=0)
-parser.add_argument("-bm", "--base_model", help="Huggingface base model onto which weights should be loaded.", type=str,
+parser.add_argument("-bm", "--transformerlens_model", help="Model as called in transformerlens, needs to be specified if different from hf_model.", type=str,
                     default="")
 parser.add_argument("-ds", "--dataset", help="Dataset to run the probing (must be in the /data folder!).", type=str,
                     default="")
-parser.add_argument("-mtd", "--method", help="Method used for probing.", type=str, default="lr")
+parser.add_argument("-mtd", "--method", help="Method used for probing.", type=str, default="lr_l2")
 parser.add_argument("-single_k", "--single_k", help="Number of neurons to be considered for single probing.", type=int,
                     default=64)
 parser.add_argument("-max_multi_k", "--max_multi_k", help="Max number of neurons to consider for multi probing.",
@@ -45,7 +45,7 @@ if bool(args.half_precision):
 else:
     dtype = torch.float32
 
-model = load_model(args.hf_model, args.base_model, args.adapter_model,
+model = load_model(args.hf_model, args.transformerlens_model, args.adapter_model,
                    device=args.device, n_devices=args.n_devices, dtype=dtype)
 
 # Loading the dataset

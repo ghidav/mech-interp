@@ -57,7 +57,6 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
     n = activations[0].shape[-1]
     model = None
     if method == 'mmd':
-        raise NotImplementedError
 
         for j in tqdm(range(len(activations))):
             X = activations[j].numpy()
@@ -66,18 +65,18 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
             imps = pd.DataFrame({
                 'layer': [j for i in range(n)],
                 'neuron': np.arange(n),
-                'importance': np.abs()
+                'importance': np.abs(X[y > 0.5].mean(axis=0) -
+                              X[y < 0.5].mean(axis=0))
             })
-            """
-            mean_dif = np.abs(X[pos_class].mean(axis=0) -
-                              X[~pos_class].mean(axis=0))
-            """
 
             top_k_features.append(imps.sort_values(by='importance').iloc[-k:])
 
-    if method == 'lr':
+    if method == 'lr_l1':
         model = LogisticRegression(n_jobs=-1, verbose=False, max_iter=250, class_weight='balanced',
                                    C=0.1, penalty='l1', solver='saga', **kwargs)
+
+    if method == 'lr_l2':
+        model = LogisticRegression(n_jobs=-1, verbose=False, max_iter=250, class_weight='balanced', solver='saga',**kwargs)
 
     elif method == 'svc':
         model = LinearSVC(loss='hinge', dual='auto', verbose=False, **kwargs)

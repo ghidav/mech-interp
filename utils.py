@@ -39,8 +39,9 @@ def list_to_str(x):
 
     return s[:-1]
 
-def load_model(hf_model_name, base_model="", adapter_model="", device='cpu', n_devices=1, dtype=torch.float32):
+def load_model(hf_model_name, tl_model_name="", adapter_model="", device='cpu', n_devices=1, dtype=torch.float32):
     model = None
+    if tl_model_name =="": tl_model_name = hf_model_name
 
     if adapter_model != "":
         hf_model = AutoModelForCausalLM.from_pretrained(
@@ -52,11 +53,17 @@ def load_model(hf_model_name, base_model="", adapter_model="", device='cpu', n_d
         del hf_model
 
         tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
-        model = HookedTransformer.from_pretrained(base_model, hf_model=peft_model, tokenizer=tokenizer,
+        model = HookedTransformer.from_pretrained(tl_model_name, hf_model=peft_model, tokenizer=tokenizer,
                                                     device=device, n_devices=n_devices, dtype=dtype)
     else:
+<<<<<<< HEAD
         try: 
             model = HookedTransformer.from_pretrained(hf_model_name, device=device, n_devices=n_devices, dtype=dtype)
+=======
+        try:
+            model = HookedTransformer.from_pretrained(tl_model_name, device=device, n_devices=n_devices, dtype=dtype)
+            print("Loaded model into HookedTransformer")
+>>>>>>> e867e846b0cca4c89e2550ead222082b11f19d09
         except Exception as e:
             print(e)
 
@@ -64,8 +71,10 @@ def load_model(hf_model_name, base_model="", adapter_model="", device='cpu', n_d
             try:
                 tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
                 hf_model = AutoModelForCausalLM.from_pretrained(hf_model_name, low_cpu_mem_usage=True)
-                model = HookedTransformer.from_pretrained(base_model, hf_model=hf_model, tokenizer=tokenizer,
+                print("Loaded model from hf. Attempting to load it to HookedTransformer")
+                model = HookedTransformer.from_pretrained(tl_model_name, hf_model=hf_model, tokenizer=tokenizer,
                                                         device=device, n_devices=n_devices, dtype=dtype)
+                print("Loaded model into HookedTransformer")
                 del hf_model
 
             except Exception as e:

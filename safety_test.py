@@ -114,8 +114,8 @@ n = args.batch_size * n_batches
     
     
 for b in tqdm(range(n_batches)):
-    sys_p = [SYS_PROMPT+'\n\nQUESTION: '+p+'\n\nANSWER: ' for p in prompts[b*args.batch_size:(b+1)*args.batch_size]]
-    nosys_p = ['\n\nQUESTION: '+p+'\n\nANSWER: ' for p in prompts[b*args.batch_size:(b+1)*args.batch_size]]
+    sys_p = [SYS_PROMPT+'\n\nINSTRUCTION: '+p+'\n\nANSWER: ' for p in prompts[b*args.batch_size:(b+1)*args.batch_size]]
+    nosys_p = ['\n\nINSTRUCTION: '+p+'\n\nANSWER: ' for p in prompts[b*args.batch_size:(b+1)*args.batch_size]]
     
     sys_toks = model.to_tokens(sys_p, padding_side='left', prepend_bos=False)[:, 1:] # [bs n_toks]
     nosys_toks = model.to_tokens(nosys_p, padding_side='left', prepend_bos=False)[:, 1:] # [bs n_toks]

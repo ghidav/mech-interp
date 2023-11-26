@@ -73,8 +73,9 @@ def load_model(hf_model_name, tl_model_name="", adapter_model="", device='cpu', 
         model = HookedTransformer.from_pretrained(tl_model_name, hf_model=peft_model, tokenizer=tokenizer,
                                                   device=device, n_devices=n_devices, dtype=dtype)
     else:
-        try: 
-            model = HookedTransformer.from_pretrained(hf_model_name, device=device, n_devices=n_devices, dtype=dtype)
+        try:
+            model = HookedTransformer.from_pretrained(tl_model_name, device=device, n_devices=n_devices, dtype=dtype)
+            print("Loaded model into HookedTransformer")
         except Exception as e:
             print(e)
 

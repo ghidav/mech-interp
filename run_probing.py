@@ -83,6 +83,8 @@ else:
     folder = args.hf_model.split('/')[-1]
 if not os.path.exists(f"images/{folder}"):
     os.mkdir(f"images/{folder}")
+if not os.path.exists(f"probes/{folder}"):
+    os.mkdir(f"probes/{folder}")
 
 logger.info('Creating PCA 2D-KDE plot...')
 fig = plot_pc(delta_mlp_post, prompts, rows, cols, 2)
@@ -92,13 +94,19 @@ logger.info('Plot created and saved.')
 
 # Run probing
 top_k_features = get_top_neurons(mlp_post, prompts, method=args.method, k=max(args.single_k, args.batch_k + args.max_multi_k - 1))
+if args.single_k > args.batch_k + args.max_multi_k - 1:
+    multi_top_k = top_k_features.groupby('layer').apply(lambda x: x[-(args.batch_k + args.max_multi_k - 1):])
+    single_top_k = top_k_features
+else:
+    single_top_k = top_k_features.groupby('layer').apply(lambda x: x[-args.single_k:])
+    multi_top_k = top_k_features
 
 logger.info('Running single probes...')
-single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=top_k_features, k=args.single_k, print_activations = args.print_activations)
+single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=single_top_k, k=args.single_k, print_activations = args.print_activations)
 logger.info('Single probes obtained.')
 
 logger.info('Running multi probes...')
-multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=top_k_features, max_multi_k=args.max_multi_k, batch_k=args.batch_k)
+multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=multi_top_k, max_multi_k=args.max_multi_k, batch_k=args.batch_k)
 logger.info('Single multi obtained.')
 
 if not os.path.exists(f"probes/{folder}"):

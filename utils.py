@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
-from transformer_lens import HookedTransformer
+from transformer_lens import HookedTransformer, ActivationCache
 
 
 def normalize(x):

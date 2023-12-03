@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score, roc_curve, auc
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.utils._testing import ignore_warnings
@@ -66,7 +66,7 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
                 'layer': [j for i in range(n)],
                 'neuron': np.arange(n),
                 'importance': np.abs(X[y > 0.5].mean(axis=0) -
-                              X[y < 0.5].mean(axis=0))
+                                     X[y < 0.5].mean(axis=0))
             })
 
             top_k_features.append(imps.sort_values(by='importance').iloc[-k:])
@@ -76,7 +76,8 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
                                    C=0.1, penalty='l1', solver='saga', **kwargs)
 
     if method == 'lr_l2':
-        model = LogisticRegression(n_jobs=-1, verbose=False, max_iter=250, class_weight='balanced', solver='saga',**kwargs)
+        model = LogisticRegression(n_jobs=-1, verbose=False, max_iter=250, class_weight='balanced', solver='saga',
+                                   **kwargs)
 
     elif method == 'svc':
         model = LinearSVC(loss='hinge', dual='auto', verbose=False, **kwargs)
@@ -100,7 +101,7 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def log_reg_score(X_train, y_train, X_test, y_test, **kwargs):
+def log_reg_score(X_train, y_train, X_test, y_test, return_roc=False, **kwargs):
     lr = LogisticRegression(class_weight='balanced',
                             penalty='l2',
                             solver='saga',
@@ -108,14 +109,26 @@ def log_reg_score(X_train, y_train, X_test, y_test, **kwargs):
                             max_iter=200,
                             **kwargs)
     lr.fit(X_train, y_train)
-
     y_pred_prob = lr.predict(X_test)
+    mean = np.mean(y_pred_prob)
+    variance = np.var(y_pred_prob)
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
     y_pred = np.round(y_pred_prob)
 
-    return (precision_score(y_test, y_pred, zero_division=0), recall_score(y_test, y_pred, zero_division=0))
+    ans = {'P':
+               precision_score(y_test, y_pred, zero_division=0), 'R': recall_score(y_test, y_pred, zero_division=0),
+           'AUC': auc(fpr, tpr),
+           'Mean': mean, 'Variance': variance}
+
+    if return_roc:
+        ans['fpr'] = fpr
+        ans['tpr'] = tpr
+
+    return ans
+
 
 @ignore_warnings(category=ConvergenceWarning)
-def log_reg_score_with_prompts(X_train, y_train, X_test, y_test, prompts_test, **kwargs):
+def log_reg_score_with_prompts(X_train, y_train, X_test, y_test, prompts_test, return_roc=False, **kwargs):
     lr = LogisticRegression(class_weight='balanced',
                             penalty='l2',
                             solver='saga',
@@ -125,23 +138,38 @@ def log_reg_score_with_prompts(X_train, y_train, X_test, y_test, prompts_test, *
     lr.fit(X_train, y_train)
 
     y_pred_prob = lr.predict(X_test)
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+    mean = np.mean(y_pred_prob)
+    variance = np.var(y_pred_prob)
     y_pred = np.round(y_pred_prob)
 
     positively_predicted = [prompt for i, prompt in enumerate(prompts_test) if
                             y_test[i] == 1 and y_pred[i] == 1]
 
-    return (precision_score(y_test, y_pred, zero_division=0), recall_score(y_test, y_pred, zero_division=0),
-            positively_predicted)
+    ans = {'P':
+               precision_score(y_test, y_pred, zero_division=0), 'R': recall_score(y_test, y_pred, zero_division=0),
+           'AUC': auc(fpr, tpr),
+           'Mean': mean, 'Variance': variance, 'Phrases': positively_predicted}
+    if return_roc:
+        ans['fpr'] = fpr
+        ans['tpr'] = tpr
+    return ans
 
-
-def get_single_probing(activations, prompts, method, top_k_features=None, k=64, print_activations = True):
+def get_single_probing(activations, prompts, method, top_k_features=None, k=64, print_activations=True, add_roc = False):
     scores_df = {
         'L': [],
         'N': [],
         'P': [],
         'R': [],
-        'F1': []
+        'F1': [],
+        'AUC': [],
+        'Mean': [],
+        'Variance': []
     }
+    if add_roc:
+        scores_df['fpr'] = []
+        scores_df['tpr'] = []
+
     if print_activations:
         phrases_df = {
             'L': [],
@@ -157,36 +185,52 @@ def get_single_probing(activations, prompts, method, top_k_features=None, k=64, 
 
         if print_activations:
             X_train, X_test, y_train, y_test, prompts_test = get_train_test_with_prompts(activations, prompts, int(l))
-            p, r, predicted = log_reg_score_with_prompts(X_train[:, int(n), None], y_train, X_test[:, int(n), None],
-                                                         y_test,
-                                                         prompts_test)
+            res_dict = log_reg_score_with_prompts(X_train[:, int(n), None], y_train,
+                                                                                    X_test[:, int(n), None],
+                                                                                    y_test,
+                                                                                    prompts_test, add_roc)
             phrases_df['L'].append(l)
             phrases_df['N'].append(n)
-            phrases_df['Phrases'].append(predicted)
+            phrases_df['Phrases'].append(res_dict['Phrases'])
 
         else:
             X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
-            p, r = log_reg_score(X_train[:, int(n), None], y_train, X_test[:, int(n), None], y_test)
+            res_dict = log_reg_score(X_train[:, int(n), None], y_train, X_test[:, int(n), None],
+                                                            y_test, add_roc)
 
+        p = res_dict['P']
+        r = res_dict['R']
         scores_df['L'].append(l)
         scores_df['N'].append(n)
         scores_df['P'].append(p)
         scores_df['R'].append(r)
         scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
+        scores_df['AUC'].append(res_dict['AUC'])
+        scores_df['Mean'].append(res_dict['Mean'])
+        scores_df['Variance'].append(res_dict['Variance'])
+        if add_roc:
+            scores_df['fpr'].append(res_dict['fpr'])
+            scores_df['tpr'].append(res_dict['tpr'])
 
     phrases_res = None if not print_activations else pd.DataFrame(phrases_df)
     return pd.DataFrame(scores_df), phrases_res
 
 
-def get_multi_probing(activations, prompts, method, top_k_features=None, max_multi_k=5, batch_k=15):
+def get_multi_probing(activations, prompts, method, top_k_features=None, max_multi_k=5, batch_k=15, add_roc = False):
     scores_df = {
         'L': [],
         'K': [],
         'N': [],
         'P': [],
         'R': [],
-        'F1': []
+        'F1': [],
+        'AUC': [],
+        'Mean': [],
+        'Variance': []
     }
+    if add_roc:
+        scores_df['fpr'] = []
+        scores_df['tpr'] = []
 
     top_neurons_to_source = batch_k + max_multi_k - 1
 
@@ -205,13 +249,21 @@ def get_multi_probing(activations, prompts, method, top_k_features=None, max_mul
             for i in range(batch_k):
                 neurons_to_consider = sel_neurons[int(l)][i:i + k]
                 if len(neurons_to_consider) > 0:
-                    p, r = log_reg_score(X_train[:, neurons_to_consider], y_train, X_test[:, neurons_to_consider], y_test)
-
+                    res_dict = log_reg_score(X_train[:, neurons_to_consider], y_train,
+                                                                    X_test[:, neurons_to_consider], y_test, add_roc)
+                    p=res_dict['P']
+                    r = res_dict['R']
                     scores_df['L'].append(int(l))
                     scores_df['K'].append(int(k))
                     scores_df['N'].append(neurons_to_consider)
                     scores_df['P'].append(p)
                     scores_df['R'].append(r)
                     scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
+                    scores_df['AUC'].append(res_dict['AUC'])
+                    scores_df['Mean'].append(res_dict['Mean'])
+                    scores_df['Variance'].append(res_dict['Variance'])
+                    if add_roc:
+                        scores_df['fpr'].append(res_dict['fpr'])
+                        scores_df['tpr'].append(res_dict['tpr'])
 
     return pd.DataFrame(scores_df)

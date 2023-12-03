@@ -29,6 +29,8 @@ parser.add_argument("-max_multi_k", "--max_multi_k", help="Max number of neurons
 parser.add_argument("-batch_k", "--batch_k", help="Number of batch neurons to be considered for multi probing.",
                     type=int, default=15)
 parser.add_argument("-print_activations", "--print_activations", help="Whether to print activations for single probing.",
+                    type=bool, default=False)
+parser.add_argument("-add_roc", "--add_roc", help="Whether to add fpr and tpr in the csv and plot roc curves.",
                     type=bool, default=True)
 parser.add_argument("-adp", "--adapter_model", help="Huggingface adapter model.", type=str, default="")
 
@@ -102,11 +104,11 @@ else:
     multi_top_k = top_k_features
 
 logger.info('Running single probes...')
-single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=single_top_k, k=args.single_k, print_activations = args.print_activations)
+single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=single_top_k, k=args.single_k, print_activations = args.print_activations, add_roc=args.add_roc)
 logger.info('Single probes obtained.')
 
 logger.info('Running multi probes...')
-multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=multi_top_k, max_multi_k=args.max_multi_k, batch_k=args.batch_k)
+multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=multi_top_k, max_multi_k=args.max_multi_k, batch_k=args.batch_k, add_roc=args.add_roc)
 logger.info('Single multi obtained.')
 
 if not os.path.exists(f"probes/{folder}"):

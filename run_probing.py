@@ -139,21 +139,22 @@ fig.write_image(f"images/{args.folder}/mean_var_single_probes.svg")
 fig.write_html(f"images/{args.folder}/mean_var_single_probes.html")
 logger.info('Plot created and saved.')
 
-logger.info('Creating ROC curves plot for single probes...')
-fig = plot_roc_curves(single_probes, rows, cols)
-fig.write_image(f"images/{args.folder}/roc_single_probes.svg")
-fig.write_html(f"images/{args.folder}/roc_single_probes.html")
-logger.info('Plot created and saved.')
-
 logger.info('Creating mean and variance plot for multi probes...')
 fig = plot_mean_var_multi_probes(multi_probes, rows, cols)
 fig.write_image(f"images/{args.folder}/mean_var_multi_probes.svg")
 fig.write_html(f"images/{args.folder}/mean_var_multi_probes.html")
 logger.info('Plot created and saved.')
 
-logger.info('Creating ROC curves plot for multi probes...')
-fig = plot_roc_curves_multi_probes(multi_probes, rows, cols)
-fig.write_image(f"images/{args.folder}/roc_multi_probes.svg")
-fig.write_html(f"images/{args.folder}/roc_multi_probes.html")
-logger.info('Plot created and saved.')
+if args.add_roc:
+    logger.info('Creating ROC curves plot for multi probes...')
+    fig = plot_roc_curves_multi_probes(multi_probes, rows, cols)
+    fig.write_image(f"images/{args.folder}/roc_multi_probes.svg")
+    fig.write_html(f"images/{args.folder}/roc_multi_probes.html")
+    logger.info('Plot created and saved.')
+
+    logger.info('Creating ROC curves plot for single probes...')
+    fig = plot_roc_curves(single_probes, rows, cols)
+    fig.write_image(f"images/{args.folder}/roc_single_probes.svg")
+    fig.write_html(f"images/{args.folder}/roc_single_probes.html")
+    logger.info('Plot created and saved.')
 

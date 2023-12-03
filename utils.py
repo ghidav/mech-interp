@@ -94,3 +94,26 @@ def load_model(hf_model_name, tl_model_name="", adapter_model="", device='cpu', 
     model.tokenizer.padding = 'left'  # TO CHECK!
 
     return model
+
+# Text generation on multi-device (should be updated with topk)
+def generate_text(model, prompt, max_new_tokens=1):
+    toks = model.to_tokens(prompt)
+
+    for i in tqdm(range(max_new_tokens)):
+        with torch.no_grad():
+            new_tok = model(toks)[0, -1, :].argmax().to('cuda:0')
+        
+        toks = torch.concat([toks, new_tok[None, None]], -1)
+
+    return model.to_string(toks)
+
+# Get top-k tokens with proba
+def get_top_tokens(model, prompt, k=5):
+    with torch.no_grad():
+        logits = model(model.to_tokens(prompt)).softmax(-1).type(torch.float32).cpu().numpy()
+
+    top_logits = np.argsort(logits[0,-1, :])[::-1]
+    for i in range(k):
+        print(f"'{model.to_string(top_logits[i])}'-{top_logits[i]}\tP: {np.round(logits[0, -1, top_logits[i]], 3)}")
+
+    

@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import torch
+import re
+
 
 from sklearn.decomposition import PCA
 from scipy.stats import gaussian_kde
@@ -145,6 +147,45 @@ def plot_mean_var(scores_df, rows, cols):
     return fig
 
 
+def plot_mean_var_multi_probes(scores_df, rows, cols):
+    n_layers = rows * cols
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'L {i + 1}' for i in range(n_layers)],
+                        horizontal_spacing=0.05, vertical_spacing=0.05)
+
+    height = int(rows * 300)
+
+    scores_df['text'] = [
+        f"N{int(scores_df.iloc[i, 1])} - F1: {np.round(scores_df['F1'].iloc[i] * 100, 2)}% - AUC: {np.round(scores_df['AUC'].iloc[i] * 100, decimals=2)}%"
+        for i in range(len(scores_df))]
+
+    mapping = {
+        1: 'blue',
+        2: 'green',
+        3: 'yellow',
+        4: 'orange',
+        5: 'red'
+    }
+
+    def opacity(x):
+        if 0 < x < 0.25: return 0.40
+        if 0.25 < x < 0.50: return 0.60
+        if 0.50 < x < 0.75: return 0.80
+        if 0.75 < x < 1.0: return 1.0
+
+    for index, row in scores_df.iterrows():
+        fig.add_trace(
+            go.Scatter(x=[row['Mean']], y=[row['Variance']],
+                       marker=dict(color=[mapping[row['K']]]),
+                       text=[row['N']],
+                       showlegend=False, hovertext=[row['text']]),
+            # fill=[row['F1']],
+            row=int(row['L'] // cols) + 1, col=int(row['L'] % cols) + 1
+        )
+
+    fig.update_layout(height=height, width=1600, title_text="Mean/Variance curves")
+    return fig
+
+
 def plot_roc_curves(scores_df, rows, cols):
     n_layers = rows * cols
     fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'L {i + 1}' for i in range(n_layers)],
@@ -157,9 +198,65 @@ def plot_roc_curves(scores_df, rows, cols):
         for i in range(len(scores_df))]
 
     for index, row in scores_df.iterrows():
+        x = row["fpr"]
+        y =row["tpr"]
+        if type(x) == str:
+            x = re.sub(r'\s+', " ", row["fpr"]).replace("[","").replace("]","").split(" ")
+            x = [float(el) for el in x if el != ""]
+        if type(y) == str:
+            y = re.sub(r'\s+', " ", row["tpr"]).replace("[", "").replace("]", "").split(" ")
+            y = [float(el) for el in y if el != ""]
         fig.add_trace(
-            go.Scatter(x=row['fpr'], y=[row['tpr']], mode = 'lines',
-                       marker=dict(color=[row['F1']], colorscale='Viridis', cmin=0, cmax=1), text=[row['N']],
+            go.Scatter(x=x, y=y, mode='lines',
+                       line=dict(shape = 'spline', smoothing =1),
+                       text=[row['N']],
+                       showlegend=False, hovertext=[row['text']]),
+            # fill=[row['F1']],
+            row=int(row['L'] // cols) + 1, col=int(row['L'] % cols) + 1
+        )
+
+    fig.update_layout(height=height, width=1600, title_text="ROC curves")
+    return fig
+
+
+def plot_roc_curves_multi_probes(scores_df, rows, cols):
+    n_layers = rows * cols
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'L {i + 1}' for i in range(n_layers)],
+                        horizontal_spacing=0.05, vertical_spacing=0.05)
+
+    height = int(rows * 300)
+
+    scores_df['text'] = [
+        f"N{int(scores_df.iloc[i, 1])} - F1: {np.round(scores_df['F1'].iloc[i] * 100, 2)}% - AUC: {np.round(scores_df['AUC'].iloc[i] * 100, decimals=2)}%"
+        for i in range(len(scores_df))]
+
+    mapping = {
+        1: 'blue',
+        2: 'green',
+        3: 'yellow',
+        4: 'orange',
+        5: 'red'
+    }
+
+    def opacity(x):
+        if 0 < x < 0.25: return 0.40
+        if 0.25 < x < 0.50: return 0.60
+        if 0.50 < x < 0.75: return 0.80
+        if 0.75 < x < 1.0: return 1.0
+
+    for index, row in scores_df.iterrows():
+        x = row["fpr"]
+        y =row["tpr"]
+        if type(x) == str:
+            x = re.sub(r'\s+', " ", row["fpr"]).replace("[","").replace("]","").split(" ")
+            x = [float(el) for el in x if el != ""]
+        if type(y) == str:
+            y = re.sub(r'\s+', " ", row["tpr"]).replace("[", "").replace("]", "").split(" ")
+            y = [float(el) for el in y if el != ""]
+        fig.add_trace(
+            go.Scatter(x=x, y=y, mode='lines',
+                       line=dict(shape = 'spline', smoothing = 1, color=mapping[row['K']]),
+                       text=[row['N']],
                        showlegend=False, hovertext=[row['text']]),
             # fill=[row['F1']],
             row=int(row['L'] // cols) + 1, col=int(row['L'] % cols) + 1

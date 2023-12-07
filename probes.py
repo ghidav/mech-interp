@@ -11,6 +11,8 @@ from sklearn.svm import LinearSVC
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
+from joblib import Parallel, delayed
+
 from utils import list_to_str
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -101,7 +103,8 @@ def get_top_neurons(activations, prompts, method, k=64, **kwargs):
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def log_reg_score(X_train, y_train, X_test, y_test, return_roc=False, **kwargs):
+def log_reg_score(train_ds, return_roc=False, **kwargs):
+    X_train, X_test, y_train, y_test = train_ds
     lr = LogisticRegression(class_weight='balanced',
                             penalty='l2',
                             solver='saga',
@@ -128,7 +131,8 @@ def log_reg_score(X_train, y_train, X_test, y_test, return_roc=False, **kwargs):
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def log_reg_score_with_prompts(X_train, y_train, X_test, y_test, prompts_test, return_roc=False, **kwargs):
+def log_reg_score_with_prompts(train_ds, return_roc=False, **kwargs):
+    X_train, X_test, y_train, y_test, prompts_test = train_ds
     lr = LogisticRegression(class_weight='balanced',
                             penalty='l2',
                             solver='saga',
@@ -180,37 +184,53 @@ def get_single_probing(activations, prompts, method, top_k_features=None, k=64, 
     if top_k_features is None:
         top_k_features = get_top_neurons(activations, prompts, method=method, k=k)
 
-    for i in tqdm(range(len(activations) * k), desc="Single probing"):
-        l, n, *_ = top_k_features.iloc[i]
+    ########
+    bs = 64
+    ########
 
+    for i in tqdm(range(len(activations) * k // bs), desc="Single probing"):
+
+        train_ds = []
+
+        for j in range(i*bs, (i+1)*bs):
+            l, n, *_ = top_k_features.iloc[j]
+
+            scores_df['L'].append(l)
+            scores_df['N'].append(n)
+        
+            if print_activations:
+                X_train, X_test, y_train, y_test, prompts_test = get_train_test_with_prompts(activations, prompts, int(l))
+                train_ds.append((X_train[:, int(n), None], X_test[:, int(n), None], y_train, y_test, prompts_test))
+                
+                phrases_df['L'].append(l)
+                phrases_df['N'].append(n)
+
+            else:
+                X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
+                train_ds.append((X_train[:, int(n), None], X_test[:, int(n), None], y_train, y_test))
+
+        
         if print_activations:
-            X_train, X_test, y_train, y_test, prompts_test = get_train_test_with_prompts(activations, prompts, int(l))
-            res_dict = log_reg_score_with_prompts(X_train[:, int(n), None], y_train,
-                                                                                    X_test[:, int(n), None],
-                                                                                    y_test,
-                                                                                    prompts_test, add_roc)
-            phrases_df['L'].append(l)
-            phrases_df['N'].append(n)
-            phrases_df['Phrases'].append(res_dict['Phrases'])
-
+            res_dicts = Parallel(n_jobs=bs)(delayed(log_reg_score_with_prompts)(train_ds[i], return_roc=add_roc) for i in range(bs))
         else:
-            X_train, X_test, y_train, y_test = get_train_test(activations, prompts, int(l))
-            res_dict = log_reg_score(X_train[:, int(n), None], y_train, X_test[:, int(n), None],
-                                                            y_test, add_roc)
+            res_dicts = Parallel(n_jobs=bs)(delayed(log_reg_score)(train_ds[i], return_roc=add_roc) for i in range(bs))
+        
+        for j in range(bs):
+            p = res_dicts[j]['P']
+            r = res_dicts[j]['R']
+            scores_df['P'].append(p)
+            scores_df['R'].append(r)
+            scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
+            scores_df['AUC'].append(res_dicts[j]['AUC'])
+            scores_df['Mean'].append(res_dicts[j]['Mean'])
+            scores_df['Variance'].append(res_dicts[j]['Variance'])
+            
+            if print_activations:
+                phrases_df['Phrases'].append(res_dicts[j]['Phrases'])
 
-        p = res_dict['P']
-        r = res_dict['R']
-        scores_df['L'].append(l)
-        scores_df['N'].append(n)
-        scores_df['P'].append(p)
-        scores_df['R'].append(r)
-        scores_df['F1'].append(2 * p * r / (p + r + 1e-9))
-        scores_df['AUC'].append(res_dict['AUC'])
-        scores_df['Mean'].append(res_dict['Mean'])
-        scores_df['Variance'].append(res_dict['Variance'])
-        if add_roc:
-            scores_df['fpr'].append(res_dict['fpr'])
-            scores_df['tpr'].append(res_dict['tpr'])
+            if add_roc:
+                scores_df['fpr'].append(res_dicts[j]['fpr'])
+                scores_df['tpr'].append(res_dicts[j]['tpr'])
 
     phrases_res = None if not print_activations else pd.DataFrame(phrases_df)
     return pd.DataFrame(scores_df), phrases_res

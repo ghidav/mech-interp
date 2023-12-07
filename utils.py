@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import torch
 from tqdm.auto import tqdm
+from openai import OpenAI
+import time
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
@@ -116,4 +118,35 @@ def get_top_tokens(model, prompt, k=5):
     for i in range(k):
         print(f"'{model.to_string(top_logits[i])}'-{top_logits[i]}\tP: {np.round(logits[0, -1, top_logits[i]], 3)}")
 
-    
+
+class ContentModeration:
+    def __init__(self, token):
+        self.client = OpenAI(api_key=token)
+
+    def get_hate(self, message):
+        """
+        Run content moderation on a single message
+        :param message:
+        :return:
+        """
+        response = self.client.moderations.create(
+            input=message,
+        )
+
+        if response.results:
+            return response.results[0].category_scores
+        else:
+            return None
+
+    def content_moderation(self, messages):
+        """
+        Run content moderation on a list of messages
+        :param messages:
+        :return:
+        """
+        collect = []
+        for o in tqdm(messages, total=len(messages)):
+            collect.append(self.get_hate(o))
+            time.sleep(0.5)
+
+        return collect

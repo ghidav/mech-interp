@@ -108,17 +108,20 @@ logger.info('Running single probes...')
 single_probes, single_probes_phrases = get_single_probing(mlp_post, prompts, args.method, top_k_features=single_top_k, k=args.single_k, print_activations = args.print_activations, add_roc=args.add_roc)
 logger.info('Single probes obtained.')
 
-logger.info('Running multi probes...')
-multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=multi_top_k, max_multi_k=args.max_multi_k, batch_k=args.batch_k, add_roc=args.add_roc)
-logger.info('Single multi obtained.')
+#logger.info('Running multi probes...')
+#multi_probes = get_multi_probing(mlp_post, prompts, method=args.method, top_k_features=multi_top_k, max_multi_k=args.max_multi_k, batch_k=args.batch_k, add_roc=args.add_roc)
+#logger.info('Single multi obtained.')
 
+# Saving probing results
 if not os.path.exists(f"probes/{folder}"):
     os.mkdir(f"probes/{folder}")
+
+top_k_features.to_csv(f'probes/{folder}/top_k_neurons.csv')
 
 if single_probes_phrases is not None:
     single_probes_phrases.to_csv(f'probes/{folder}/single_probes_phrases.csv')
 single_probes.to_csv(f'probes/{folder}/single_probes.csv')
-multi_probes.to_csv(f'probes/{folder}/multi_probes.csv')
+#multi_probes.to_csv(f'probes/{folder}/multi_probes.csv')
 
 # Plot probes
 logger.info('Creating single probes plot...')
@@ -127,34 +130,35 @@ fig.write_image(f"images/{folder}/single_probes.svg")
 fig.write_html(f"images/{folder}/single_probes.html")
 logger.info('Plot created and saved.')
 
-logger.info('Creating multi probes plot...')
-fig = plot_multi_probes(multi_probes, rows, cols)
-fig.write_image(f"images/{folder}/multi_probes.svg")
-fig.write_html(f"images/{folder}/multi_probes.html")
-logger.info('Plot created and saved.')
+#logger.info('Creating multi probes plot...')
+#fig = plot_multi_probes(multi_probes, rows, cols)
+#fig.write_image(f"images/{folder}/multi_probes.svg")
+#fig.write_html(f"images/{folder}/multi_probes.html")
+#logger.info('Plot created and saved.')
 
-logger.info('Creating single probes mean and variance plot...')
-fig = plot_mean_var(single_probes, rows, cols)
-fig.write_image(f"images/{folder}/mean_var_single_probes.svg")
-fig.write_html(f"images/{folder}/mean_var_single_probes.html")
-logger.info('Plot created and saved.')
+#logger.info('Creating single probes mean and variance plot...')
+#fig = plot_mean_var(single_probes, rows, cols)
+#fig.write_image(f"images/{folder}/mean_var_single_probes.svg")
+#fig.write_html(f"images/{folder}/mean_var_single_probes.html")
+#logger.info('Plot created and saved.')
 
-logger.info('Creating mean and variance plot for multi probes...')
-fig = plot_mean_var_multi_probes(multi_probes, rows, cols)
-fig.write_image(f"images/{folder}/mean_var_multi_probes.svg")
-fig.write_html(f"images/{folder}/mean_var_multi_probes.html")
-logger.info('Plot created and saved.')
+#logger.info('Creating mean and variance plot for multi probes...')
+#fig = plot_mean_var_multi_probes(multi_probes, rows, cols)
+#fig.write_image(f"images/{folder}/mean_var_multi_probes.svg")
+#fig.write_html(f"images/{folder}/mean_var_multi_probes.html")
+#logger.info('Plot created and saved.')
 
 if args.add_roc:
-    logger.info('Creating ROC curves plot for multi probes...')
-    fig = plot_roc_curves_multi_probes(multi_probes, rows, cols)
-    fig.write_image(f"images/{folder}/roc_multi_probes.svg")
-    fig.write_html(f"images/{folder}/roc_multi_probes.html")
-    logger.info('Plot created and saved.')
+    #logger.info('Creating ROC curves plot for multi probes...')
+    #fig = plot_roc_curves_multi_probes(multi_probes, rows, cols)
+    #fig.write_image(f"images/{folder}/roc_multi_probes.svg")
+    #fig.write_html(f"images/{folder}/roc_multi_probes.html")
+    #logger.info('Plot created and saved.')
 
-    logger.info('Creating ROC curves plot for single probes...')
-    fig = plot_roc_curves(single_probes, rows, cols)
-    fig.write_image(f"images/{folder}/roc_single_probes.svg")
-    fig.write_html(f"images/{folder}/roc_single_probes.html")
-    logger.info('Plot created and saved.')
+    #logger.info('Creating ROC curves plot for single probes...')
+    #fig = plot_roc_curves(single_probes, rows, cols)
+    #fig.write_image(f"images/{folder}/roc_single_probes.svg")
+    #fig.write_html(f"images/{folder}/roc_single_probes.html")
+    #logger.info('Plot created and saved.')
+    pass
 

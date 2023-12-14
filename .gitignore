@@ -18,3 +18,5 @@ probes.log
 requirements.txt.save
 
 __pycache__/labelling_instance.cpython-310.pyc
+
+.generations/

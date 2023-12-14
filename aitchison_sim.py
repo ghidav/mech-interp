@@ -56,9 +56,9 @@ logit_lens = LogitLens.from_model(model)
 tuned_lens.to('cuda:0')
 
 # Compute similarities
-
 logit_lens_cb, _ = extract_cb(model, prompts, logit_lens)
 tuned_lens_cb, _ = extract_cb(model, prompts, tuned_lens)
 
 simil_tuned_lens = generate_aitchisons(prompts, tuned_lens, tuned_lens_cb)
 simil_logit_lens = generate_aitchisons(prompts, logit_lens, logit_lens_cb)
+

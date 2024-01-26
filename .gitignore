@@ -1,4 +1,8 @@
 
+safety/activations/*
+safety/data/*
+safety/images/*
+
 .idea/inspectionProfiles/profiles_settings.xml
 
 *.xml

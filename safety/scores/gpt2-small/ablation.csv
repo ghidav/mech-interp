@@ -1,0 +1,5 @@
+,subspace,n_components,lambda,layer,score
+0,xs,10,0,10,0.19
+1,full,10,0,10,0.15
+2,xs,10,0,11,0.12
+3,full,10,0,11,0.14

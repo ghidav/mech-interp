@@ -1,0 +1,254 @@
+[
+    {
+        "train_data_general_path": "training/alpaca_train_base.json",
+        "output_model_name": "Llama-2-7b-hf-lora-base-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_base.json",
+        "output_model_name": "Llama-2-7b-hf-lora-base-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_base.json",
+        "output_model_name": "Llama-2-7b-hf-lora-base-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_100.json",
+        "output_model_name": "Llama-2-7b-hf-lora-100-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_100.json",
+        "output_model_name": "Llama-2-7b-hf-lora-100-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_100.json",
+        "output_model_name": "Llama-2-7b-hf-lora-100-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_300.json",
+        "output_model_name": "Llama-2-7b-hf-lora-300-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_300.json",
+        "output_model_name": "Llama-2-7b-hf-lora-300-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_300.json",
+        "output_model_name": "Llama-2-7b-hf-lora-300-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_500.json",
+        "output_model_name": "Llama-2-7b-hf-lora-500-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_500.json",
+        "output_model_name": "Llama-2-7b-hf-lora-500-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_500.json",
+        "output_model_name": "Llama-2-7b-hf-lora-500-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_1000.json",
+        "output_model_name": "Llama-2-7b-hf-lora-1000-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_1000.json",
+        "output_model_name": "Llama-2-7b-hf-lora-1000-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_1000.json",
+        "output_model_name": "Llama-2-7b-hf-lora-1000-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_2000.json",
+        "output_model_name": "Llama-2-7b-hf-lora-2000-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_2000.json",
+        "output_model_name": "Llama-2-7b-hf-lora-2000-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_2000.json",
+        "output_model_name": "Llama-2-7b-hf-lora-2000-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "meta-llama/Llama-2-7b-hf",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_base.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-base-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_base.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-base-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_base.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-base-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_100.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-100-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_100.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-100-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_100.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-100-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_300.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-300-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_300.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-300-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_300.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-300-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_500.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-500-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_500.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-500-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_500.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-500-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_1000.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-1000-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_1000.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-1000-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_1000.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-1000-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_2000.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-2000-rs-1",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_2000.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-2000-rs-2",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    },
+    {
+        "train_data_general_path": "training/alpaca_train_2000.json",
+        "output_model_name": "Mistral-7B-v0.1-lora-2000-rs-3",
+        "base_repository": "safety-lora",
+        "base_model": "mistralai/Mistral-7B-v0.1",
+        "dev_data_path": "evaluation/alpaca_eval.json"
+    }
+]

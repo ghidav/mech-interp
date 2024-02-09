@@ -79,13 +79,13 @@ def train(
     gradient_accumulation_steps = batch_size // micro_batch_size
 
     # set up distributed training
-    #device_map = "auto"
-    #world_size = int(os.environ.get("WORLD_SIZE", 1))
-    #ddp = world_size != 1
+    device_map = "auto"
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    ddp = world_size != 1
 
-    #if ddp:
-    #    device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
-    #    gradient_accumulation_steps = gradient_accumulation_steps // world_size
+    if ddp:
+        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
+        gradient_accumulation_steps = gradient_accumulation_steps // world_size
 
     ###########################################################
     # LOAD TRAINING CONFIG
@@ -212,7 +212,7 @@ def train(
         base_model,
         load_in_8bit=True if train_using_lora else False,
         torch_dtype=torch.float16 if train_using_lora else torch.bfloat16,
-        device_map="auto",
+        device_map=device_map,
         trust_remote_code=True,
     )
     logging.info(f"Loaded base model: {base_model}")

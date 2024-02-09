@@ -60,9 +60,6 @@ bs = args.batch_size
 xs_nb = len(xs_prompts) // bs
 full_nb = len(full_prompts) // bs
 
-y_xs = xs_df['label'][:bs*xs_nb].values.astype(int)
-y_full = full_df['label'][:bs*full_nb].values.astype(int)
-
 # Loading activations
 recompute = True
 try:
@@ -106,6 +103,9 @@ if recompute:
     full_activations = get_activations(model, full_prompts, args.component, bs=bs).cpu()
     th.save(full_activations, os.path.join(activ_path, f"{full}_{args.chat}_{args.component}.pt"))
     print("Activations cached.")
+
+y_xs = xs_df['label'][:len(xs_activations)].values.astype(int)
+y_full = full_df['label'][:len(full_activations)].values.astype(int)
 
 # Train test split
 X_train_xs, X_test_xs, y_train_xs, y_test_xs = train_test_split(xs_activations, y_xs, random_state=42, stratify=y_xs)

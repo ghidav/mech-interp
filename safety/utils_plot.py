@@ -11,9 +11,9 @@ from utils import FastPCA
 def standardize(x):
     return (x - x.mean(0)) / x.std(0)
 
-def plot_pc(activations, y, rows, cols, n_comp=2, center=True):
+def plot_pc(activations, y, rows, cols, n_comp=2, **kwargs):
     fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'L {i + 1}' for i in range(rows * cols)],
-                        shared_yaxes=True)
+                        shared_yaxes=True, **kwargs)
 
     height = int(rows * 300)
 
@@ -33,7 +33,7 @@ def plot_pc(activations, y, rows, cols, n_comp=2, center=True):
     for i in range(rows):
         for j in range(cols):
 
-            x = pca.fit_transform(activations[:, l], center=center)[:, :n_comp]
+            x = pca.fit_transform(activations[:, l])[:, :n_comp]
             x_std = standardize(x)
 
             kde_0 = gaussian_kde(x_std[:m, :].T)

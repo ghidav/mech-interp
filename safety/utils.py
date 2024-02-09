@@ -7,11 +7,12 @@ from peft import PeftModel
 import torch as th
 from tqdm.auto import tqdm
 
+
 def get_activations(model, prompts, component, bs=32):
     nl = len(model.blocks)
     activations = []
 
-    for b in tqdm(range(len(prompts) // bs)):
+    for b in tqdm(range(len(prompts) // bs + 1)):
         tokens = model.to_tokens(list(prompts[b*bs:(b+1)*bs]))
 
         with th.no_grad():
@@ -47,9 +48,19 @@ def convert_to_chat(model, prompts, sys_prompt=False):
 
     return new_prompts
 
-def convert_to_alpaca(prompts):
-    alpaca_prompts = [f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{inst}\n\n### Response:\n" for inst in prompts]
-    return alpaca_prompts
+def convert_to_alpaca(prompt, input=""):
+    if input == "":
+        alpaca_prompt = f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{prompt}\n\n### Response:\n"
+    else:
+        alpaca_prompt = f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{prompt}\n\n### Input:\n{input}\n\n### Response:\n"
+    return alpaca_prompt
+
+def convert_to_sbi(prompt, input=""):
+    if input == "":
+        sbi_prompt = f"A chat between a user and an AI assistant. The assistant answers the user's questions.\n\n### User: {prompt}\n### Assistant: "
+    else:
+        sbi_prompt = f"A chat between a user and an AI assistant. The assistant answers the user's questions.\n\n### User: {prompt}\n### Input:{input}\n### Assistant: "
+    return sbi_prompt
 
 class FastPCA(BaseEstimator, TransformerMixin):
     def __init__(self, n_components=None, center=True):
@@ -122,8 +133,15 @@ def load_model(hf_model_name, tl_model_name="", adapter_model="", device='cpu', 
 
         if not model:
             try:
-                tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
                 hf_model = AutoModelForCausalLM.from_pretrained(hf_model_name, low_cpu_mem_usage=True)
+
+                try:
+                    tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
+                except Exception as e:
+                    print("Could not load tokenizer from hf.")
+                    if 'llama-2' in hf_model_name.lower():
+                        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+
                 print("Loaded model from hf. Attempting to load it to HookedTransformer")
                 model = HookedTransformer.from_pretrained_no_processing(tl_model_name, hf_model=hf_model, tokenizer=tokenizer,
                                                               device=device, n_devices=n_devices, dtype=dtype)

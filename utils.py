@@ -13,10 +13,8 @@ from transformer_lens import HookedTransformer, ActivationCache
 def normalize(x):
     return (x - np.min(x)) / (np.max(x) - np.min(x))
 
-
 def standardize(x):
     return (x - np.mean(x)) / np.std(x)
-
 
 def get_activations(prompts, model, comps, batch_size=8):
     n_layers = len(model.blocks)
